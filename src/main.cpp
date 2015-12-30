@@ -1,0 +1,61 @@
+#include <QDebug>
+
+#include <QGuiApplication>
+#include <QQmlApplicationEngine>
+
+#include <QCommandLineParser>
+
+#include <QmlVlc.h>
+#include <QmlVlc/QmlVlcConfig.h>
+
+#include "AppConfig.h"
+
+void applyConfig( QQmlApplicationEngine* engine, const QUrl& configUrl, const QVariantMap& options )
+{
+    auto it = options.find( QStringLiteral( "qmlsrc" ) );
+    if( it != options.end() && it.value().type() == QMetaType::QString ) {
+        QUrl qmlsrc = configUrl.resolved( QUrl( it.value().toString() ) );
+        qDebug() << qmlsrc;
+        engine->load( qmlsrc );
+    }
+}
+
+int main( int argc, char *argv[] )
+{
+    RegisterQmlVlc();
+
+    QGuiApplication app( argc, argv );
+
+    QCommandLineParser parser;
+    parser.addPositionalArgument(
+        "config",
+        QCoreApplication::translate( "Application", "config file" ) );
+
+    parser.process( app );
+
+    const QStringList args = parser.positionalArguments();
+    if( args.size() != 1 )
+        return -1; // FIXME! show error message
+
+    const QUrl configFileUrl =
+        QUrl::fromUserInput( args[0], app.applicationDirPath(), QUrl::AssumeLocalFile );
+    if( !configFileUrl.isValid() )
+        return -1; // FIXME! show error message
+
+    QQmlApplicationEngine engine;
+
+    AppConfig config;
+
+    QObject::connect( &config, &AppConfig::loadFinished,
+        [&engine] ( const QUrl& configUrl, const QVariantMap& options ) {
+            applyConfig( &engine, configUrl, options );
+        }
+    );
+
+    QObject::connect( &config, &AppConfig::loadError,
+                      &app, QGuiApplication::quit );
+
+    config.loadConfig( configFileUrl );
+
+    return app.exec();
+}
