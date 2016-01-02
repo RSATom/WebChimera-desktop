@@ -67,8 +67,13 @@ int main( int argc, char *argv[] )
     if( args.size() != 1 )
         return -1; // FIXME! show error message
 
+    QString arg0 = args[0];
+    if( arg0.startsWith( QStringLiteral( PROTOCOL QT_UNICODE_LITERAL( ":" ) ), Qt::CaseInsensitive ) ) {
+        arg0 = arg0.right( arg0.size() - sizeof( PROTOCOL ) );
+    }
+
     const QUrl configFileUrl =
-        QUrl::fromUserInput( args[0], app.applicationDirPath(), QUrl::AssumeLocalFile );
+        QUrl::fromUserInput( arg0, app.applicationDirPath(), QUrl::AssumeLocalFile );
     if( !configFileUrl.isValid() )
         return -1; // FIXME! show error message
 
