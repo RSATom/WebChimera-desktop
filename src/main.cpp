@@ -4,11 +4,35 @@
 #include <QQmlApplicationEngine>
 
 #include <QCommandLineParser>
+#include <QSettings>
+#include <QDir>
 
 #include <QmlVlc.h>
 #include <QmlVlc/QmlVlcConfig.h>
 
 #include "AppConfig.h"
+
+#define PROTOCOL "webchimera"
+#define PROTOCOL_DESC "WebChimera URI"
+
+bool registerProtocol()
+{
+#ifdef Q_OS_WIN
+    QSettings protocolSettings( QStringLiteral( "HKEY_CLASSES_ROOT\\" QT_UNICODE_LITERAL( PROTOCOL ) ),
+                                QSettings::NativeFormat );
+    protocolSettings.setValue( QStringLiteral( "." ), QStringLiteral( PROTOCOL_DESC ) );
+    protocolSettings.setValue( QStringLiteral( "URL Protocol" ), QStringLiteral( "" ) );
+    protocolSettings.setValue( QStringLiteral( "shell/." ), QStringLiteral( "open" ) );
+    protocolSettings.setValue( QStringLiteral( "shell/open/command/." ),
+                               QStringLiteral( "\"%1\" \"%2\"" ).arg(
+                                   QDir::toNativeSeparators( qApp->applicationFilePath() ),
+                                   QStringLiteral( "%1" ) ) );
+
+    return protocolSettings.status() == QSettings::NoError;
+#else
+    return false;
+#endif
+}
 
 void applyConfig( QQmlApplicationEngine* engine, const QUrl& configUrl, const QVariantMap& options )
 {
@@ -31,7 +55,13 @@ int main( int argc, char *argv[] )
         "config",
         QCoreApplication::translate( "Application", "config file" ) );
 
+    QCommandLineOption registerOption( QStringList() << "r" << "register" );
+    parser.addOption( registerOption );
+
     parser.process( app );
+
+    if( parser.isSet( registerOption ) )
+        return registerProtocol() ? 0 : -1;
 
     const QStringList args = parser.positionalArguments();
     if( args.size() != 1 )
