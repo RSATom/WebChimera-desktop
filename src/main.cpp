@@ -37,7 +37,7 @@ bool registerProtocol()
 void applyConfig( QQmlApplicationEngine* engine, const QUrl& configUrl, const QVariantMap& options )
 {
     auto it = options.find( QStringLiteral( "qmlsrc" ) );
-    if( it != options.end() && it.value().type() == QMetaType::QString ) {
+    if( it != options.end() && it.value().type() == QVariant::String ) {
         QUrl qmlsrc = configUrl.resolved( QUrl( it.value().toString() ) );
         qDebug() << qmlsrc;
         engine->load( qmlsrc );
