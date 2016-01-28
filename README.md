@@ -5,11 +5,18 @@ WebChimera-desktop
 
 Media player with fully customizable UI. It's the successor of WebChimera browser plugin.
 
-### QML API
-https://github.com/RSATom/QmlVlc/wiki/QmlVlc-API
+### Docs
+* [QML API](https://github.com/RSATom/QmlVlc/wiki/QmlVlc-API)
+
+### Binaries
+* [Windows](https://github.com/RSATom/WebChimera-desktop/releases)
+* [Android](https://play.google.com/apps/testing/org.webchimera.desktop)
+
+### Demos
+* [basic](http://rsatom.github.io/WebChimera-desktop)
 
 ### Future plans
-1. port to `Android`
+1. ~~port to `Android`~~ - done
 2. port to `OS X`
 3. port to `iOS`
 4. port to `Linux`
