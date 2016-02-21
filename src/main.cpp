@@ -13,6 +13,7 @@
 #ifdef Q_OS_ANDROID
 #include <QtAndroid>
 #include <QAndroidJniObject>
+#include <QAndroidJniEnvironment>
 #endif
 
 #include "AppConfig.h"
@@ -77,7 +78,6 @@ QString ParseStartupAgruments()
 
     return data.toString();
 }
-
 #endif
 
 void applyConfig( QQmlApplicationEngine* engine, const QUrl& configUrl, const QVariantMap& options )
@@ -92,6 +92,21 @@ void applyConfig( QQmlApplicationEngine* engine, const QUrl& configUrl, const QV
 
 int main( int argc, char *argv[] )
 {
+#ifdef Q_OS_ANDROID
+    QAndroidJniObject::callStaticMethod<void>(
+        "java/lang/System",
+        "load",
+        "(Ljava/lang/String;)V",
+        QAndroidJniObject::fromString( "libvlcjni.so" ).object<jstring>() );
+
+    QAndroidJniEnvironment env;
+    if( env->ExceptionCheck() ) {
+        env->ExceptionDescribe();
+        env->ExceptionClear();
+        return -1; // FIXME! show error message
+    }
+#endif
+
     RegisterQmlVlc();
 
     QGuiApplication app( argc, argv );
