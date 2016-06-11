@@ -112,6 +112,9 @@ int main( int argc, char *argv[] )
     QGuiApplication app( argc, argv );
 
     QString arg = ParseStartupAgruments();
+    if( arg.isEmpty() )
+        return 0;
+
     if( arg.startsWith( QStringLiteral( PROTOCOL QT_UNICODE_LITERAL( ":" ) ), Qt::CaseInsensitive ) ) {
         arg = arg.right( arg.size() - sizeof( PROTOCOL ) );
     }
