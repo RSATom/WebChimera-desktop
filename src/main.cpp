@@ -21,7 +21,8 @@
 #define PROTOCOL "webchimera"
 #define PROTOCOL_DESC "WebChimera URI"
 
-#if defined( Q_OS_WIN )
+#ifdef Q_OS_WIN
+
 bool registerProtocol()
 {
     QSettings protocolSettings( QStringLiteral( "HKEY_CLASSES_ROOT\\" QT_UNICODE_LITERAL( PROTOCOL ) ),
@@ -36,32 +37,18 @@ bool registerProtocol()
 
     return protocolSettings.status() == QSettings::NoError;
 }
-#endif
 
-#if defined( Q_OS_WIN )
-QString ParseStartupAgruments()
+#else
+
+bool registerProtocol()
 {
-    QCommandLineParser parser;
-    parser.addPositionalArgument(
-        "config",
-        QCoreApplication::translate( "Application", "config file" ) );
-
-    QCommandLineOption registerOption( QStringList() << "r" << "register" );
-    parser.addOption( registerOption );
-
-    parser.process( app );
-
-    if( parser.isSet( registerOption ) )
-        return registerProtocol() ? 0 : -1;
-
-    const QStringList args = parser.positionalArguments();
-    if( args.size() != 1 )
-        return -1; // FIXME! show error message
-
-    return args[0];
+    return false;
 }
 
-#elif defined( Q_OS_ANDROID )
+#endif
+
+#ifdef Q_OS_ANDROID
+
 QString ParseStartupAgruments()
 {
     QAndroidJniObject activity = QtAndroid::androidActivity();
@@ -78,6 +65,37 @@ QString ParseStartupAgruments()
 
     return data.toString();
 }
+
+#else
+
+QString ParseStartupAgruments()
+{
+    QCommandLineParser parser;
+    parser.addPositionalArgument(
+        "config",
+        QCoreApplication::translate( "Application", "config file" ) );
+
+#ifdef Q_OS_WIN
+    QCommandLineOption registerOption( QStringList() << "r" << "register" );
+    parser.addOption( registerOption );
+#endif
+
+    parser.process( *qApp );
+
+#ifdef Q_OS_WIN
+    if( parser.isSet( registerOption ) ) {
+        registerProtocol();
+        return QString();
+    }
+#endif
+
+    const QStringList args = parser.positionalArguments();
+    if( args.size() != 1 )
+        return QString(); // FIXME! show error message
+
+    return args[0];
+}
+
 #endif
 
 void applyConfig( QQmlApplicationEngine* engine, const QUrl& configUrl, const QVariantMap& options )
