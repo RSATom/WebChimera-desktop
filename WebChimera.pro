@@ -20,3 +20,7 @@ android {
 
     ANDROID_PACKAGE_SOURCE_DIR = $$PWD/android
 }
+
+linux-rasp-pi2-g++ {
+    QMAKE_RPATHDIR += lib
+}
