@@ -3,7 +3,7 @@ WebChimera-desktop
 
 [![Join the chat at https://gitter.im/RSATom/WebChimera](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/RSATom/WebChimera?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
-Media player with fully customizable UI. It's the successor of WebChimera browser plugin.
+Media player with fully customizable UI. Based on VLC and Qt. Uses QML for UI customization.
 
 ### Docs
 * [QML API](https://github.com/RSATom/QmlVlc/wiki/QmlVlc-API)
