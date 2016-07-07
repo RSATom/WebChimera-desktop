@@ -18,6 +18,8 @@
 
 #include "AppConfig.h"
 
+#include <QtWebEngine>
+
 #define PROTOCOL "webchimera"
 #define PROTOCOL_DESC "WebChimera URI"
 
@@ -128,6 +130,8 @@ int main( int argc, char *argv[] )
     RegisterQmlVlc();
 
     QGuiApplication app( argc, argv );
+
+    QtWebEngine::initialize();
 
     QString arg = ParseStartupAgruments();
     if( arg.isEmpty() )

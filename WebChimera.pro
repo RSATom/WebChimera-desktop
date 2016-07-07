@@ -7,6 +7,8 @@ INCLUDEPATH += deps/libvlc-sdk/include
 
 CONFIG += c++11
 
+QT += webengine
+
 include(src/src.pri)
 
 android {
