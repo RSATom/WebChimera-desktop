@@ -2,12 +2,10 @@
 <script type="text/javascript" src="qrc:///qtwebchannel/qwebchannel.js"></script>
 <script type="text/javascript">
 function l() {
+    console.log(qt.webChannelTransport);
     new QWebChannel(qt.webChannelTransport,
         function(channel) {
-            setInterval(
-                function() {
-                    channel.objects.player.togglePause();
-                }, 3000 );
+            qt_channel = channel;
         }
     );
 };
@@ -15,5 +13,6 @@ function l() {
 </head>
 <body onload='l();'>
 Hello from WebEngine!
+<button onClick="qt_channel.objects.player.togglePause();">Toggle Pause</button>
 </body>
 </html>
