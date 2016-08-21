@@ -51,54 +51,84 @@ bool registerProtocol()
 
 #ifdef Q_OS_ANDROID
 
-QString ParseStartupAgruments()
+bool ParseStartupAgruments(QString* configFile, QString* error)
 {
     QAndroidJniObject activity = QtAndroid::androidActivity();
-    if( !activity.isValid() )
-        return QString();
+    if(!activity.isValid()) {
+        *error = QStringLiteral("Fail get activity");
+        return false;
+    }
 
-    QAndroidJniObject intent = activity.callObjectMethod( "getIntent", "()Landroid/content/Intent;" );
-    if( !intent.isValid() )
-        return QString();
+    QAndroidJniObject intent = activity.callObjectMethod("getIntent", "()Landroid/content/Intent;");
+    if(!intent.isValid()) {
+        *error = QStringLiteral("Fail get intent");
+        return false;
+    }
 
-    QAndroidJniObject data = intent.callObjectMethod( "getData", "()Landroid/net/Uri;" );
-    if( !data.isValid() )
-        return QString();
+    QAndroidJniObject data = intent.callObjectMethod("getData", "()Landroid/net/Uri;");
+    if(!data.isValid()) {
+        *error = QStringLiteral("Fail get intent data");
+        return false;
+    }
 
-    return data.toString();
+    *configFile = data.toString();
+    return true;
 }
 
 #else
 
-QString ParseStartupAgruments()
+bool ParseStartupAgruments(QString* configFile, QString* error)
 {
+    Q_ASSERT(configFile);
+    if(!configFile)
+        return false;
+
     QCommandLineParser parser;
     parser.addPositionalArgument(
         "config",
-        QCoreApplication::translate( "Application", "config file" ) );
+        QCoreApplication::translate("Application", "config file"));
 
 #ifdef Q_OS_WIN
-    QCommandLineOption registerOption( QStringList() << "r" << "register" );
-    parser.addOption( registerOption );
+    QCommandLineOption registerOption(QStringList() << "r" << "register");
+    parser.addOption(registerOption);
 #endif
 
-    parser.process( *qApp );
+    parser.process(*qApp);
 
 #ifdef Q_OS_WIN
-    if( parser.isSet( registerOption ) ) {
+    if(parser.isSet(registerOption)) {
         registerProtocol();
-        return QString();
+        return true;
     }
 #endif
 
     const QStringList args = parser.positionalArguments();
-    if( args.size() != 1 )
-        return QString(); // FIXME! show error message
+    switch(args.size()) {
+    case 1:
+        *configFile = args[0];
+        break;
+    default:
+        if(error)
+            *error = QObject::tr("Invalid command line arguments count");
+        return false;
+    }
 
-    return args[0];
+    if(configFile->isEmpty()) {
+        if(error)
+            *error = QObject::tr("Missing configuration file");
+        return false;
+    }
+
+    return true;
 }
 
 #endif
+
+void showError(QQmlApplicationEngine* engine, const QString& error)
+{
+    engine->rootContext()->setContextProperty(QStringLiteral("error"), error);
+    engine->load(QUrl(QStringLiteral("qrc:/error.qml")));
+}
 
 void applyConfig( QQmlApplicationEngine* engine, const QUrl& configUrl, const QVariantMap& options )
 {
@@ -112,6 +142,8 @@ void applyConfig( QQmlApplicationEngine* engine, const QUrl& configUrl, const QV
 
 int main( int argc, char *argv[] )
 {
+    QString error;
+
 #ifdef Q_OS_ANDROID
     QAndroidJniObject::callStaticMethod<void>(
         "java/lang/System",
@@ -133,34 +165,36 @@ int main( int argc, char *argv[] )
 
     QtWebEngine::initialize();
 
-    QString arg = ParseStartupAgruments();
-    if( arg.isEmpty() )
-        return 0;
-
-    if( arg.startsWith( QStringLiteral( PROTOCOL QT_UNICODE_LITERAL( ":" ) ), Qt::CaseInsensitive ) ) {
-        arg = arg.right( arg.size() - sizeof( PROTOCOL ) );
-    }
-
-    const QUrl configFileUrl =
-        QUrl::fromUserInput( arg, app.applicationDirPath(), QUrl::AssumeLocalFile );
-
-    if( !configFileUrl.isValid() )
-        return -1; // FIXME! show error message
-
     QQmlApplicationEngine engine;
 
-    AppConfig config;
+    QString configFileArg;
+    if(ParseStartupAgruments(&configFileArg, &error)) {
+        if(configFileArg.startsWith(QStringLiteral(PROTOCOL QT_UNICODE_LITERAL(":")), Qt::CaseInsensitive))
+            configFileArg = configFileArg.right(configFileArg.size() - sizeof(PROTOCOL));
 
-    QObject::connect( &config, &AppConfig::loadFinished,
-        [&engine] ( const QUrl& configUrl, const QVariantMap& options ) {
-            applyConfig( &engine, configUrl, options );
+        const QUrl configFileUrl =
+            QUrl::fromUserInput(configFileArg, app.applicationDirPath(), QUrl::AssumeLocalFile);
+
+        if(configFileUrl.isValid()) {
+            AppConfig config;
+            QObject::connect(&config, &AppConfig::loadFinished,
+                [&engine] (const QUrl& configUrl, const QVariantMap& options) {
+                    applyConfig(&engine, configUrl, options);
+                }
+            );
+            QObject::connect(&config, &AppConfig::loadError,
+                 [&engine] (const QString& error) {
+                    showError(&engine, QStringLiteral("Fail load config file:\n%1").arg(error));
+                 }
+            );
+            config.loadConfig(configFileUrl);
         }
-    );
+        else
+            error = QObject::tr("Invalid config file URL");
+    }
 
-    QObject::connect( &config, &AppConfig::loadError,
-                      &app, QGuiApplication::quit );
-
-    config.loadConfig( configFileUrl );
+    if(!error.isEmpty())
+        showError(&engine, error);
 
     return app.exec();
 }

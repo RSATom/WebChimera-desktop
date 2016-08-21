@@ -4,3 +4,6 @@ SOURCES += \
 
 HEADERS += \
     $$PWD/AppConfig.h
+
+RESOURCES += \
+    $$PWD/qml.qrc

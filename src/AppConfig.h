@@ -19,7 +19,7 @@ public:
 
 Q_SIGNALS:
     void loadFinished( const QUrl& configUrl, const QVariantMap& options );
-    void loadError();
+    void loadError(const QString& error);
 
 private Q_SLOTS:
     void networkDataReady();

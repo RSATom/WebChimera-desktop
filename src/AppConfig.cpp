@@ -63,7 +63,7 @@ void AppConfig::downloadFinished()
         Q_EMIT loadFinished( m_networkReply->url(), m_options );
     } else {
         qDebug() << m_networkReply->errorString();
-        Q_EMIT loadError();
+        Q_EMIT loadError(m_networkReply->errorString());
     }
 
     m_networkReply->deleteLater();
@@ -89,7 +89,7 @@ void AppConfig::loadConfig( const QUrl& configFile )
         } else {
             qDebug() << configFile.toLocalFile();
             qDebug() << jsonFile.errorString();
-            Q_EMIT loadError();
+            Q_EMIT loadError(jsonFile.errorString());
         }
     } else {
         m_configData.reset( new QByteArray );
