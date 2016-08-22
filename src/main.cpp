@@ -2,7 +2,7 @@
 
 #include <QGuiApplication>
 #include <QQmlApplicationEngine>
-
+#include <QQmlContext>
 #include <QCommandLineParser>
 #include <QSettings>
 #include <QDir>
