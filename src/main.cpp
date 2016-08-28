@@ -18,7 +18,9 @@
 
 #include "AppConfig.h"
 
+#ifndef Q_OS_ANDROID
 #include <QtWebEngine>
+#endif
 
 #define PROTOCOL "webchimera"
 #define PROTOCOL_DESC "WebChimera URI"
@@ -163,9 +165,23 @@ int main( int argc, char *argv[] )
 
     QGuiApplication app( argc, argv );
 
+#ifndef Q_OS_ANDROID
     QtWebEngine::initialize();
+#endif
 
     QQmlApplicationEngine engine;
+
+    AppConfig config;
+    QObject::connect(&config, &AppConfig::loadFinished,
+        [&engine] (const QUrl& configUrl, const QVariantMap& options) {
+            applyConfig(&engine, configUrl, options);
+        }
+    );
+    QObject::connect(&config, &AppConfig::loadError,
+         [&engine] (const QString& error) {
+            showError(&engine, QStringLiteral("Fail load config file:\n%1").arg(error));
+         }
+    );
 
     QString configFileArg;
     if(ParseStartupAgruments(&configFileArg, &error)) {
@@ -175,20 +191,8 @@ int main( int argc, char *argv[] )
         const QUrl configFileUrl =
             QUrl::fromUserInput(configFileArg, app.applicationDirPath(), QUrl::AssumeLocalFile);
 
-        if(configFileUrl.isValid()) {
-            AppConfig config;
-            QObject::connect(&config, &AppConfig::loadFinished,
-                [&engine] (const QUrl& configUrl, const QVariantMap& options) {
-                    applyConfig(&engine, configUrl, options);
-                }
-            );
-            QObject::connect(&config, &AppConfig::loadError,
-                 [&engine] (const QString& error) {
-                    showError(&engine, QStringLiteral("Fail load config file:\n%1").arg(error));
-                 }
-            );
+        if(configFileUrl.isValid())
             config.loadConfig(configFileUrl);
-        }
         else
             error = QObject::tr("Invalid config file URL");
     }
